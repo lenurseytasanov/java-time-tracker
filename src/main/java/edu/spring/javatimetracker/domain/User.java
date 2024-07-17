@@ -7,7 +7,8 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.UUID;
 
-@Entity(name = "users")
+@Entity
+@Table(name = "users")
 @Data
 public class User {
 

@@ -7,15 +7,14 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.UUID;
 
 @Entity
 @Data
 public class Task {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private final UUID id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private final Long id;
 
     private final String description;
 
@@ -23,23 +22,23 @@ public class Task {
     private LocalDateTime startedAt;
 
     @Setter(AccessLevel.PRIVATE)
-    private LocalDateTime endedAt;
+    private LocalDateTime finishedAt;
 
     @ManyToOne
     @JoinColumn(name = "assignee_id")
     private final User assignee;
 
     public void start() {
-        if (startedAt != null || endedAt != null) {
+        if (startedAt != null || finishedAt != null) {
             throw new RuntimeException();
         }
         startedAt = LocalDateTime.now(ZoneId.of("Z"));
     }
 
     public void finish() {
-        if (startedAt == null || endedAt != null)  {
+        if (startedAt == null || finishedAt != null)  {
             throw new RuntimeException();
         }
-        endedAt = LocalDateTime.now(ZoneId.of("Z"));
+        finishedAt = LocalDateTime.now(ZoneId.of("Z"));
     }
 }
