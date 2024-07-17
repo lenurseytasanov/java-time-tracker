@@ -1,0 +1,16 @@
+version: "3.9"
+services:
+    time_tracker_postgres:
+        image: postgres:16.2-alpine
+        environment:
+            POSTGRES_USER: ${DB_USERNAME}
+            POSTGRES_PASSWORD: ${DB_PASSWORD}
+            POSTGRES_DB: time_tracker_db
+        ports:
+            - 5432:5432
+        volumes:
+            - time_tracker_volume:/var/lib/postgresql/data
+
+volumes:
+    time_tracker_volume:
+        driver: local
