@@ -2,43 +2,55 @@ package edu.spring.javatimetracker.domain;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
-import lombok.Data;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.ZoneId;
 
 @Entity
-@Data
+@Getter
+@NoArgsConstructor
 public class Task {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private final Long id;
+    private Long id;
 
-    private final String description;
+    @Column(unique = true, nullable = false)
+    private String description;
 
-    @Setter(AccessLevel.PRIVATE)
-    private LocalDateTime startedAt;
+    private OffsetDateTime startedAt;
 
-    @Setter(AccessLevel.PRIVATE)
-    private LocalDateTime finishedAt;
+    private OffsetDateTime finishedAt;
 
+    @Setter(AccessLevel.PACKAGE)
     @ManyToOne
     @JoinColumn(name = "assignee_id")
-    private final User assignee;
+    private User assignee;
+
+    public Task(String description, OffsetDateTime startedAt, OffsetDateTime finishedAt) {
+        this.description = description;
+        this.startedAt = startedAt;
+        this.finishedAt = finishedAt;
+    }
+
+    public Task(String description) {
+        this.description = description;
+    }
 
     public void start() {
         if (startedAt != null || finishedAt != null) {
             throw new RuntimeException();
         }
-        startedAt = LocalDateTime.now(ZoneId.of("Z"));
+        startedAt = OffsetDateTime.now(ZoneId.of("Z"));
     }
 
     public void finish() {
         if (startedAt == null || finishedAt != null)  {
             throw new RuntimeException();
         }
-        finishedAt = LocalDateTime.now(ZoneId.of("Z"));
+        finishedAt = OffsetDateTime.now(ZoneId.of("Z"));
     }
 }
