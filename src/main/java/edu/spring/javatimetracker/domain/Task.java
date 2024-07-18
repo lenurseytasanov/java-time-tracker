@@ -14,6 +14,7 @@ import java.time.ZoneId;
 @NoArgsConstructor
 public class Task {
 
+    @Setter
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
