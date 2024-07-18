@@ -2,6 +2,7 @@ package edu.spring.javatimetracker.db.repository;
 
 import edu.spring.javatimetracker.domain.Task;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -49,4 +50,12 @@ public interface TaskJpaRepository extends JpaRepository<Task, Long> {
             "WHERE user.username = :username AND task.startedAt IS NOT NULL AND task.finishedAt IS NOT NULL AND " +
             "task.startedAt >= :from AND task.finishedAt < :to ")
     Long getUserTimeSum(@Param("username") String username, @Param("from") OffsetDateTime from, @Param("to") OffsetDateTime to);
+
+    /**
+     * Удаляет все задачи пользователя
+     * @param username имя пользователя
+     */
+    @Modifying
+    @Query("DELETE FROM Task task JOIN User user ON task.assignee.id = user.id WHERE user.username = :username")
+    void deleteUserTasks(@Param("username") String username);
 }

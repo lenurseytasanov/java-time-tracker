@@ -10,8 +10,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import java.time.*;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertIterableEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 @DataJpaTest(properties = {
         "spring.datasource.url=jdbc:h2:mem:testdb",
@@ -157,5 +156,22 @@ public class TaskJpaRepositoryTest {
         Duration actual = Duration.ofNanos(taskJpaRepository.getUserTimeSum("username1", from, to));
 
         assertEquals(Duration.ofHours(6), actual);
+    }
+
+    /**
+     * Проверяется: задачи пользователя удалены
+     */
+    @Test
+    public void deleteUserTasksTest() {
+        assertEquals(3, taskJpaRepository
+                .findUserTasks("username1", OffsetDateTime.MIN, OffsetDateTime.MAX).size());
+
+        taskJpaRepository.deleteUserTasks("username1");
+
+        assertTrue(taskJpaRepository
+                .findUserTasks("username1", OffsetDateTime.MIN, OffsetDateTime.MAX).isEmpty());
+
+        assertEquals(1, taskJpaRepository
+                .findUserTasks("username2", OffsetDateTime.MIN, OffsetDateTime.MAX).size());
     }
 }
