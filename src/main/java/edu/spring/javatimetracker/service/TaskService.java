@@ -17,17 +17,27 @@ public class TaskService {
     private final TaskJpaRepository taskRepository;
 
     @Transactional
-    public Task startTime(Long taskId) {
-        Task task = taskRepository.findById(taskId).orElseThrow();
-        task.start();
-        return task;
+    public Task createTask(String description) {
+        taskRepository.findByDescription(description).ifPresent(task -> { throw new RuntimeException(); });
+        return taskRepository.save(new Task(description));
     }
 
     @Transactional
-    public Task stopTime(Long taskId) {
+    public void deleteTask(Long id) {
+        Task task = taskRepository.findById(id).orElseThrow();
+        taskRepository.delete(task);
+    }
+
+    @Transactional
+    public void startTime(Long taskId) {
+        Task task = taskRepository.findById(taskId).orElseThrow();
+        task.start();
+    }
+
+    @Transactional
+    public void stopTime(Long taskId) {
         Task task = taskRepository.findById(taskId).orElseThrow();
         task.finish();
-        return task;
     }
 
     public List<Task> findUserTasks(String username, OffsetDateTime from, OffsetDateTime to) {
