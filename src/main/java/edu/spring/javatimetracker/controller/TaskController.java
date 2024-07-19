@@ -3,76 +3,98 @@ package edu.spring.javatimetracker.controller;
 import edu.spring.javatimetracker.controller.dto.TaskDto;
 import edu.spring.javatimetracker.controller.dto.TimeIntervalDto;
 import edu.spring.javatimetracker.service.TaskService;
+import edu.spring.javatimetracker.util.validation.Username;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.TimeZone;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/{username}/tasks")
 @RequiredArgsConstructor
 public class TaskController {
 
     private final TaskService taskService;
 
-    @PostMapping("/tasks")
-    public ResponseEntity<Void> createTask(@RequestBody String description) {
-        taskService.createTask(description);
+    @PostMapping
+    public ResponseEntity<Void> createTask(@Username @PathVariable(name = "username") String username,
+                                           @RequestBody String description) {
+        taskService.createTask(username, description);
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
-    @DeleteMapping("/tasks/{task-id}")
-    public ResponseEntity<Void> deleteTask(@PathVariable Long taskId) {
+    @DeleteMapping("/{task-id}")
+    public ResponseEntity<Void> deleteTask(@PathVariable(name = "task-id") Long taskId) {
         taskService.deleteTask(taskId);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
-    @PostMapping("/tasks/{task-id}")
-    public ResponseEntity<Void> startTask(@PathVariable Long taskId) {
+    @PostMapping("/{task-id}/start")
+    public ResponseEntity<Void> startTask(@NotNull @PathVariable(name = "task-id") Long taskId) {
         taskService.startTime(taskId);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
-    @PostMapping("/tasks/{task-id}")
-    public ResponseEntity<Void> finishTask(@PathVariable Long taskId) {
+    @PostMapping("/{task-id}/stop")
+    public ResponseEntity<Void> finishTask(@NotNull @PathVariable(name = "task-id") Long taskId) {
         taskService.stopTime(taskId);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
-    @GetMapping("/users/{username}/tasks")
+    private List<OffsetDateTime> getTimeBoundaries(LocalDate start, LocalDate end, TimeZone timeZone) {
+        return List.of(
+                start != null ? start.atStartOfDay(timeZone.toZoneId()).toOffsetDateTime() : OffsetDateTime.MIN,
+                end != null ? end.atStartOfDay(timeZone.toZoneId()).plusDays(1).toOffsetDateTime() : OffsetDateTime.MAX
+        );
+    }
+
+    @GetMapping("/list")
     public ResponseEntity<Iterable<TaskDto>> findUserTasks(
-            @PathVariable String username,
-            @RequestParam(name = "from") OffsetDateTime start, @RequestParam(name = "to") OffsetDateTime end) {
-        Iterable<TaskDto> response = taskService.findUserTasks(username, start, end).stream()
+            @Username @PathVariable(name = "username") String username,
+            @RequestParam(name = "from", required = false) LocalDate start,
+            @RequestParam(name = "to", required = false) LocalDate end,
+            @NotNull TimeZone timeZone) {
+        List<OffsetDateTime> boundaries = getTimeBoundaries(start, end, timeZone);
+        Iterable<TaskDto> response = taskService.findUserTasks(username, boundaries.getFirst(), boundaries.getLast()).stream()
                 .map(task -> new TaskDto(
                         task.getDescription(), Duration.between(task.getStartedAt(), task.getFinishedAt())))
                 .toList();
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
-    @GetMapping("/users/{username}/intervals")
+    @GetMapping("/work-intervals")
     public ResponseEntity<Iterable<TimeIntervalDto>> findUserIntervals(
-            @PathVariable String username,
-            @RequestParam(name = "from") OffsetDateTime start, @RequestParam(name = "to") OffsetDateTime end) {
-        Iterable<TimeIntervalDto> response = taskService.findUserIntervals(username, start, end).stream()
+            @Username @PathVariable(name = "username") String username,
+            @RequestParam(name = "from", required = false) LocalDate start,
+            @RequestParam(name = "to", required = false) LocalDate end,
+            @NotNull TimeZone timeZone) {
+        List<OffsetDateTime> boundaries = getTimeBoundaries(start, end, timeZone);
+        Iterable<TimeIntervalDto> response = taskService.findUserIntervals(username, boundaries.getFirst(), boundaries.getLast()).stream()
                 .map(task -> new TimeIntervalDto(task.getStartedAt(), task.getFinishedAt(), task.getDescription()))
                 .toList();
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
-    @GetMapping("/users/{username}/work-time")
+    @GetMapping("/work-time")
     public ResponseEntity<Duration> findUserWorkTime(
-            @PathVariable String username,
-            @RequestParam(name = "from") OffsetDateTime start, @RequestParam(name = "to") OffsetDateTime end) {
-        Duration response = taskService.findUserWorkTime(username, start, end);
+            @Username @PathVariable(name = "username") String username,
+            @RequestParam(name = "from", required = false) LocalDate start,
+            @RequestParam(name = "to", required = false) LocalDate end,
+            @NotNull TimeZone timeZone) {
+        List<OffsetDateTime> boundaries = getTimeBoundaries(start, end, timeZone);
+        Duration response = taskService.findUserWorkTime(username, boundaries.getFirst(), boundaries.getLast());
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
-    @DeleteMapping("/users/{username}/tasks")
-    public ResponseEntity<Void> deleteUserTasks(@PathVariable String username) {
+    @DeleteMapping
+    public ResponseEntity<Void> deleteUserTasks(@Username @PathVariable(name = "username") String username) {
         taskService.clearUserTasks(username);
         return new ResponseEntity<>(HttpStatus.OK);
     }

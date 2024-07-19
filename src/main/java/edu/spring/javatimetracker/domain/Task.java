@@ -1,10 +1,7 @@
 package edu.spring.javatimetracker.domain;
 
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
@@ -12,6 +9,7 @@ import java.time.ZoneId;
 @Entity
 @Getter
 @NoArgsConstructor
+@EqualsAndHashCode
 public class Task {
 
     @Setter
@@ -27,6 +25,7 @@ public class Task {
     private OffsetDateTime finishedAt;
 
     @Setter(AccessLevel.PACKAGE)
+    @EqualsAndHashCode.Exclude
     @ManyToOne
     @JoinColumn(name = "assignee_id")
     private User assignee;

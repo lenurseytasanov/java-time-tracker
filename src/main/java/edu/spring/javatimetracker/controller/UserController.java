@@ -4,6 +4,8 @@ import edu.spring.javatimetracker.controller.dto.UserDto;
 import edu.spring.javatimetracker.domain.User;
 import edu.spring.javatimetracker.service.UserService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,7 +19,7 @@ public class UserController {
     private final UserService userService;
 
     @PostMapping
-    public ResponseEntity<Void> createUser(@RequestBody @Valid UserDto userDto) {
+    public ResponseEntity<Void> createUser(@Valid @RequestBody UserDto userDto) {
         User user = new User(userDto.getUsername(), userDto.getPassword(),
                 userDto.getFirstname(), userDto.getLastname());
 
@@ -26,16 +28,18 @@ public class UserController {
     }
 
     @PutMapping("/{username}")
-    public ResponseEntity<Void> updateUser(@PathVariable String username, @RequestBody @Valid UserDto userDto) {
+    public ResponseEntity<Void> updateUser(
+            @NotBlank @Max(255) @PathVariable String username, @Valid @RequestBody UserDto userDto) {
         User user = new User(userDto.getUsername(), userDto.getPassword(),
                 userDto.getFirstname(), userDto.getLastname());
 
         userService.updateUser(username, user);
         return new ResponseEntity<>(HttpStatus.OK);
+
     }
 
     @DeleteMapping("/{username}")
-    public ResponseEntity<Void> deleteUser(@PathVariable String username) {
+    public ResponseEntity<Void> deleteUser(@NotBlank @Max(255) @PathVariable String username) {
         userService.deleteUser(username);
         return new ResponseEntity<>(HttpStatus.OK);
     }

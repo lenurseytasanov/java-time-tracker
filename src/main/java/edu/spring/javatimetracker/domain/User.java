@@ -1,8 +1,9 @@
 package edu.spring.javatimetracker.domain;
 
 import jakarta.persistence.*;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.Collections;
@@ -13,7 +14,8 @@ import java.util.UUID;
 @Entity
 @Table(name = "users")
 @Getter
-@RequiredArgsConstructor
+@NoArgsConstructor
+@EqualsAndHashCode
 public class User {
 
     @Setter
@@ -22,22 +24,30 @@ public class User {
     private UUID id;
 
     @Column(nullable = false, unique = true)
-    private final String username;
+    private String username;
 
     @Column(nullable = false)
-    private final String password;
+    private String password;
 
     @Column(nullable = false)
-    private final String firstname;
+    private String firstname;
 
     @Column(nullable = false)
-    private final String lastname;
+    private String lastname;
 
-    @OneToMany(mappedBy = "assignee", cascade = CascadeType.PERSIST, orphanRemoval = true)
+    @EqualsAndHashCode.Exclude
+    @OneToMany(mappedBy = "assignee", cascade = { CascadeType.PERSIST, CascadeType.MERGE }, orphanRemoval = true)
     private final Set<Task> tasks = new LinkedHashSet<>();
 
     public Set<Task> getTasks() {
         return Collections.unmodifiableSet(tasks);
+    }
+
+    public User(String username, String password, String firstname, String lastname) {
+        this.username = username;
+        this.password = password;
+        this.firstname = firstname;
+        this.lastname = lastname;
     }
 
     public void addTask(Task task) {
