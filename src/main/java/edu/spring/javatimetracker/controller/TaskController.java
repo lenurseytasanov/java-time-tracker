@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.TimeZone;
 
@@ -20,6 +21,9 @@ import java.util.TimeZone;
 @RequestMapping("/api/{username}/tasks")
 @RequiredArgsConstructor
 public class TaskController {
+
+    public static final OffsetDateTime LOWER_TIME_BOUNDARY = OffsetDateTime.of(1900, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC);
+    public static final OffsetDateTime UPPER_TIME_BOUNDARY = OffsetDateTime.of(2100, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC);
 
     private final TaskService taskService;
 
@@ -50,9 +54,14 @@ public class TaskController {
 
     private List<OffsetDateTime> getTimeBoundaries(LocalDate start, LocalDate end, TimeZone timeZone) {
         return List.of(
-                start != null ? start.atStartOfDay(timeZone.toZoneId()).toOffsetDateTime() : OffsetDateTime.MIN,
-                end != null ? end.atStartOfDay(timeZone.toZoneId()).plusDays(1).toOffsetDateTime() : OffsetDateTime.MAX
+                start != null ? start.atStartOfDay(timeZone.toZoneId()).toOffsetDateTime() : LOWER_TIME_BOUNDARY,
+                end != null ? end.atStartOfDay(timeZone.toZoneId()).plusDays(1).toOffsetDateTime() : UPPER_TIME_BOUNDARY
         );
+    }
+
+    private String formatDuration(Duration duration) {
+        long m = duration.getSeconds() / 60;
+        return "%02d:%02d".formatted(m / 60, m);
     }
 
     @GetMapping("/list")
@@ -64,7 +73,7 @@ public class TaskController {
         List<OffsetDateTime> boundaries = getTimeBoundaries(start, end, timeZone);
         Iterable<TaskDto> response = taskService.findUserTasks(username, boundaries.getFirst(), boundaries.getLast()).stream()
                 .map(task -> new TaskDto(
-                        task.getDescription(), Duration.between(task.getStartedAt(), task.getFinishedAt())))
+                        task.getDescription(), formatDuration(Duration.between(task.getStartedAt(), task.getFinishedAt()))))
                 .toList();
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
@@ -83,13 +92,14 @@ public class TaskController {
     }
 
     @GetMapping("/work-time")
-    public ResponseEntity<Duration> findUserWorkTime(
+    public ResponseEntity<String> findUserWorkTime(
             @Username @PathVariable(name = "username") String username,
             @RequestParam(name = "from", required = false) LocalDate start,
             @RequestParam(name = "to", required = false) LocalDate end,
             @NotNull TimeZone timeZone) {
         List<OffsetDateTime> boundaries = getTimeBoundaries(start, end, timeZone);
-        Duration response = taskService.findUserWorkTime(username, boundaries.getFirst(), boundaries.getLast());
+        String response = formatDuration(
+                taskService.findUserWorkTime(username, boundaries.getFirst(), boundaries.getLast()));
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
