@@ -1,9 +1,13 @@
 package edu.spring.javatimetracker.controller;
 
+import edu.spring.javatimetracker.controller.dto.TaskCreatedDto;
 import edu.spring.javatimetracker.controller.dto.TaskDto;
 import edu.spring.javatimetracker.controller.dto.TimeIntervalDto;
+import edu.spring.javatimetracker.controller.dto.TimeSumDto;
+import edu.spring.javatimetracker.domain.Task;
 import edu.spring.javatimetracker.service.TaskService;
 import edu.spring.javatimetracker.util.validation.Username;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -27,28 +31,16 @@ public class TaskController {
 
     private final TaskService taskService;
 
-    @PostMapping
-    public ResponseEntity<Void> createTask(@Username @PathVariable(name = "username") String username,
-                                           @RequestBody String description) {
-        taskService.createTask(username, description);
-        return new ResponseEntity<>(HttpStatus.CREATED);
-    }
-
-    @DeleteMapping("/{task-id}")
-    public ResponseEntity<Void> deleteTask(@PathVariable(name = "task-id") Long taskId) {
-        taskService.deleteTask(taskId);
-        return new ResponseEntity<>(HttpStatus.OK);
-    }
-
-    @PostMapping("/{task-id}/start")
-    public ResponseEntity<Void> startTask(@NotNull @PathVariable(name = "task-id") Long taskId) {
-        taskService.startTime(taskId);
-        return new ResponseEntity<>(HttpStatus.OK);
+    @PostMapping("/new")
+    public ResponseEntity<TaskCreatedDto> createTask(@Username @PathVariable(name = "username") String username,
+                                                     @NotBlank @RequestBody String description) {
+        Task task = taskService.createTask(username, description);
+        return new ResponseEntity<>(new TaskCreatedDto(task.getId()), HttpStatus.CREATED);
     }
 
     @PostMapping("/{task-id}/stop")
     public ResponseEntity<Void> finishTask(@NotNull @PathVariable(name = "task-id") Long taskId) {
-        taskService.stopTime(taskId);
+        taskService.finishTask(taskId);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
@@ -61,10 +53,10 @@ public class TaskController {
 
     private String formatDuration(Duration duration) {
         long m = duration.getSeconds() / 60;
-        return "%02d:%02d".formatted(m / 60, m);
+        return "%02d:%02d".formatted(m / 60, m % 60);
     }
 
-    @GetMapping("/list")
+    @GetMapping
     public ResponseEntity<Iterable<TaskDto>> findUserTasks(
             @Username @PathVariable(name = "username") String username,
             @RequestParam(name = "from", required = false) LocalDate start,
@@ -92,14 +84,14 @@ public class TaskController {
     }
 
     @GetMapping("/work-time")
-    public ResponseEntity<String> findUserWorkTime(
+    public ResponseEntity<TimeSumDto> findUserWorkTime(
             @Username @PathVariable(name = "username") String username,
             @RequestParam(name = "from", required = false) LocalDate start,
             @RequestParam(name = "to", required = false) LocalDate end,
             @NotNull TimeZone timeZone) {
         List<OffsetDateTime> boundaries = getTimeBoundaries(start, end, timeZone);
-        String response = formatDuration(
-                taskService.findUserWorkTime(username, boundaries.getFirst(), boundaries.getLast()));
+        TimeSumDto response = new TimeSumDto(formatDuration(
+                taskService.findUserWorkTime(username, boundaries.getFirst(), boundaries.getLast())));
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 

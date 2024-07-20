@@ -27,32 +27,20 @@ public class TaskService {
     private static final String USER_NOT_FOUND = "User '%s' not found";
 
     @Transactional
-    public void createTask(String username, String description) {
+    public Task createTask(String username, String description) {
         taskRepository.findByDescription(description).ifPresent(task -> {
             throw new ResourceExistsException("Task '%s' already exists".formatted(description));
         });
         User user = userRepository.findByUsername(username).orElseThrow(() ->
                 new NotFoundException(USER_NOT_FOUND.formatted(username)));
         Task task = new Task(description);
-        user.addTask(task);
-    }
-
-    @Transactional
-    public void deleteTask(Long id) {
-        Task task = taskRepository.findById(id).orElseThrow(() ->
-                new NotFoundException(TASK_NOT_FOUND.formatted(id)));
-        taskRepository.delete(task);
-    }
-
-    @Transactional
-    public void startTime(Long taskId) {
-        Task task = taskRepository.findById(taskId).orElseThrow(() ->
-                new NotFoundException(TASK_NOT_FOUND.formatted(taskId)));
         task.start();
+        user.addTask(task);
+        return taskRepository.findByDescription(description).orElseThrow();
     }
 
     @Transactional
-    public void stopTime(Long taskId) {
+    public void finishTask(Long taskId) {
         Task task = taskRepository.findById(taskId).orElseThrow(() ->
                 new NotFoundException(TASK_NOT_FOUND.formatted(taskId)));
         task.finish();
@@ -70,6 +58,7 @@ public class TaskService {
         return Duration.ofNanos(taskRepository.getUserTimeSum(username, from, to));
     }
 
+    @Transactional
     public void clearUserTasks(String username) {
         taskRepository.deleteUserTasks(username);
     }
