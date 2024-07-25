@@ -3,6 +3,7 @@ package edu.spring.javatimetracker.handler;
 import edu.spring.javatimetracker.controller.dto.ValidationErrorDto;
 import edu.spring.javatimetracker.util.exception.NotFoundException;
 import edu.spring.javatimetracker.util.exception.ResourceExistsException;
+import edu.spring.javatimetracker.util.exception.TaskNotCreatedException;
 import org.springframework.context.MessageSourceResolvable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -34,5 +35,10 @@ public class GlobalControllerExceptionHandler {
     @ExceptionHandler(ResourceExistsException.class)
     public ResponseEntity<String> handleResourceExistsException(ResourceExistsException ex) {
         return new ResponseEntity<>(ex.getMessage(), HttpStatus.CONFLICT);
+    }
+
+    @ExceptionHandler(TaskNotCreatedException.class)
+    public ResponseEntity<String> handleTaskNotCreatedException(TaskNotCreatedException ex) {
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }
