@@ -1,10 +1,11 @@
 package edu.spring.javatimetracker.domain;
 
+import edu.spring.javatimetracker.util.exception.TaskNotCreatedException;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.Clock;
 import java.time.OffsetDateTime;
-import java.time.ZoneId;
 
 @Entity
 @Getter
@@ -40,17 +41,17 @@ public class Task {
         this.description = description;
     }
 
-    public void start() {
+    public void start(Clock clock) {
         if (startedAt != null || finishedAt != null) {
-            throw new RuntimeException();
+            throw new TaskNotCreatedException("Task '%s' already started".formatted(description));
         }
-        startedAt = OffsetDateTime.now(ZoneId.of("Z"));
+        startedAt = OffsetDateTime.now(clock);
     }
 
-    public void finish() {
+    public void finish(Clock clock) {
         if (startedAt == null || finishedAt != null)  {
-            throw new RuntimeException();
+            throw new TaskNotCreatedException("Task '%s' already finished or not started".formatted(description));
         }
-        finishedAt = OffsetDateTime.now(ZoneId.of("Z"));
+        finishedAt = OffsetDateTime.now(clock);
     }
 }

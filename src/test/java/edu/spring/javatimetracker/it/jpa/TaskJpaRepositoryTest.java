@@ -1,5 +1,7 @@
-package edu.spring.javatimetracker.db.repository;
+package edu.spring.javatimetracker.it.jpa;
 
+import edu.spring.javatimetracker.db.repository.TaskJpaRepository;
+import edu.spring.javatimetracker.db.repository.UserJpaRepository;
 import edu.spring.javatimetracker.domain.Task;
 import edu.spring.javatimetracker.domain.User;
 import org.junit.jupiter.api.BeforeEach;
@@ -100,7 +102,7 @@ public class TaskJpaRepositoryTest {
     public void findNotFinishedTaskTest() {
         userJpaRepository.findByUsername("username2").ifPresent(user -> {
             Task task1 = new Task("not finished task");
-            task1.start();
+            task1.start(Clock.systemUTC());
             user.addTask(task1);
 
             user.addTask(new Task("not started task"));

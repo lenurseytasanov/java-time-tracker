@@ -1,4 +1,4 @@
-package edu.spring.javatimetracker.it.controller;
+package edu.spring.javatimetracker.it.mvc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.spring.javatimetracker.controller.TaskController;
