@@ -14,14 +14,14 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.Clock;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
+import java.time.*;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class TaskServiceTest {
@@ -97,5 +97,63 @@ public class TaskServiceTest {
 
         Exception ex = assertThrows(NotFoundException.class, () -> taskService.finishTask(2L));
         assertEquals("Task with id '2' not found", ex.getMessage());
+    }
+
+    /**
+     * Проверяется:
+     * <p>Завершить все не завершенные задачи</p>
+     */
+    @Test
+    public void finishAllTasksTest() {
+        task1.start(clock);
+        task1.finish(clock);
+        task2.start(clock);
+        Task task3 = new Task("task 3",
+                OffsetDateTime.of(2000, 1, 1, 12, 0, 0, 0, ZoneOffset.UTC),
+                null);
+        when(taskJpaRepository.findAll()).thenReturn(List.of(task1, task2, task3));
+
+        assertFalse(task2.isFinished());
+        assertFalse(task3.isFinished());
+
+        taskService.finishAllTasks();
+        assertTrue(task2.isFinished());
+        assertTrue(task3.isFinished());
+    }
+
+    /**
+     * Проверяется:
+     * <ul>
+     *     <li>Если после завершения задачи прошло больше укзанного времени - удалить задачу</li>
+     *     <li>Если задача не завершенна - игнорировать её</li>
+     * </ul>
+     */
+    @Test
+    public void deleteOldTasksTest() {
+        when(clock.instant()).thenReturn(Instant.from(
+                OffsetDateTime.of(2000, 1, 1, 12, 0, 0, 0, ZoneOffset.UTC)));
+        task1.start(clock);
+        task1.finish(clock);
+
+        when(clock.instant()).thenReturn(Instant.from(
+                OffsetDateTime.of(2000, 1, 1, 15, 0, 0, 0, ZoneOffset.UTC)));
+        task2.start(clock);
+        task2.finish(clock);
+
+        Task task3 = new Task("task 3",
+                OffsetDateTime.of(2000, 1, 1, 15, 0, 0, 0, ZoneOffset.UTC),
+                null);
+
+        when(taskJpaRepository.findAll()).thenReturn(List.of(task1, task2, task3));
+
+        Duration ttl = Duration.ofHours(5);
+
+        when(clock.instant()).thenReturn(Instant.from(
+                OffsetDateTime.of(2000, 1, 1, 18, 0, 0, 0, ZoneOffset.UTC)));
+        taskService.deleteOldTasks(ttl);
+
+        verify(taskJpaRepository).delete(eq(task1));
+        verify(taskJpaRepository, never()).delete(eq(task2));
+        verify(taskJpaRepository, never()).delete(eq(task3));
     }
 }

@@ -54,4 +54,8 @@ public class Task {
         }
         finishedAt = OffsetDateTime.now(clock);
     }
+
+    public boolean isFinished() {
+        return finishedAt != null;
+    }
 }

@@ -10,9 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Clock;
-import java.time.Duration;
-import java.time.OffsetDateTime;
+import java.time.*;
 import java.util.List;
 
 @Service
@@ -24,6 +22,10 @@ public class TaskService {
     private final UserJpaRepository userRepository;
 
     private final Clock clock;
+
+    public static final OffsetDateTime LOWER_TIME_BOUNDARY = OffsetDateTime.of(1900, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC);
+    
+    public static final OffsetDateTime UPPER_TIME_BOUNDARY = OffsetDateTime.of(2100, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC);
 
     private static final String TASK_NOT_FOUND = "Task with id '%d' not found";
 
@@ -58,21 +60,50 @@ public class TaskService {
                 new NotFoundException(TASK_NOT_FOUND.formatted(taskId)));
         task.finish(clock);
     }
-
-    public List<Task> findUserTasks(String username, OffsetDateTime from, OffsetDateTime to) {
-        return taskRepository.findUserTasks(username, from, to);
+    
+    private OffsetDateTime convertStartDate(LocalDate date) {
+        return date != null ? date.atStartOfDay(clock.getZone()).toOffsetDateTime() : LOWER_TIME_BOUNDARY;
+    }
+    
+    private OffsetDateTime convertEndDate(LocalDate date) {
+        return date != null ? date.atStartOfDay(clock.getZone()).plusDays(1).toOffsetDateTime() : UPPER_TIME_BOUNDARY;
+    }
+    
+    public List<Task> findUserTasks(String username, LocalDate from, LocalDate to) {
+        OffsetDateTime leftBound = convertStartDate(from);
+        OffsetDateTime rightBound = convertEndDate(to);
+        return taskRepository.findUserTasks(username, leftBound, rightBound);
     }
 
-    public List<Task> findUserIntervals(String username, OffsetDateTime from, OffsetDateTime to) {
-        return taskRepository.findUserIntervals(username, from, to);
+    public List<Task> findUserIntervals(String username, LocalDate from, LocalDate to) {
+        OffsetDateTime leftBound = convertStartDate(from);
+        OffsetDateTime rightBound = convertEndDate(to);
+        return taskRepository.findUserIntervals(username, leftBound, rightBound);
     }
 
-    public Duration findUserWorkTime(String username, OffsetDateTime from, OffsetDateTime to) {
-        return Duration.ofNanos(taskRepository.getUserTimeSum(username, from, to));
+    public Duration findUserWorkTime(String username, LocalDate from, LocalDate to) {
+        OffsetDateTime leftBound = convertStartDate(from);
+        OffsetDateTime rightBound = convertEndDate(to);
+        return Duration.ofNanos(taskRepository.getUserTimeSum(username, leftBound, rightBound));
     }
 
     @Transactional
     public void clearUserTasks(String username) {
         taskRepository.deleteUserTasks(username);
+    }
+
+    @Transactional
+    public void finishAllTasks() {
+        taskRepository.findAll().stream()
+                .filter(task -> !task.isFinished())
+                .forEach(task -> task.finish(clock));
+    }
+
+    @Transactional
+    public void deleteOldTasks(Duration taskTtl) {
+        OffsetDateTime now = OffsetDateTime.now(clock);
+        taskRepository.findAll().stream()
+                .filter(task -> task.isFinished() && task.getFinishedAt().plus(taskTtl).isBefore(now))
+                .forEach(taskRepository::delete);
     }
 }
