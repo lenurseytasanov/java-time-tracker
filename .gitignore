@@ -34,4 +34,6 @@ build/
 
 mvnw
 mvnw.cmd
+.mvn
 .env
+logs

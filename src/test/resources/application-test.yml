@@ -11,8 +11,4 @@ spring:
             enabled: false
 
 logging:
-    level:
-        org.hibernate.SQL: DEBUG
-        org.hibernate.type.descriptor.sql.BasicBinder: TRACE
-        org.springframework.web: trace
-        org.springframework.orm.jpa: DEBUG
+    config: src/test/resources/log4j2-test.xml
