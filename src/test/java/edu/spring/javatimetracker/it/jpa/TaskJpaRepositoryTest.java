@@ -8,18 +8,15 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.test.context.ActiveProfiles;
 
 import java.time.*;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@DataJpaTest(properties = {
-        "spring.datasource.url=jdbc:h2:mem:testdb",
-        "spring.datasource.driver-class-name=org.h2.Driver",
-        "spring.jpa.database-platform=org.hibernate.dialect.H2Dialect",
-        "spring.jpa.hibernate.ddl-auto=create-drop"
-})
+@DataJpaTest
+@ActiveProfiles("test")
 public class TaskJpaRepositoryTest {
 
     @Autowired
