@@ -14,11 +14,6 @@ spring:
 server:
     port: 8080
 
-logging:
-    level:
-        org.hibernate: error
-        org.springframework.web: trace
-
 app:
     task-ttl: 5d
     time-zone: UTC

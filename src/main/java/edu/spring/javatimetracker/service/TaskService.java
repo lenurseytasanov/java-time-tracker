@@ -7,6 +7,7 @@ import edu.spring.javatimetracker.domain.User;
 import edu.spring.javatimetracker.util.exception.NotFoundException;
 import edu.spring.javatimetracker.util.exception.ResourceExistsException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,6 +16,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class TaskService {
 
     private final TaskJpaRepository taskRepository;
@@ -51,6 +53,7 @@ public class TaskService {
         Task task = new Task(description);
         user.addTask(task);
         task.start(clock);
+        log.info("User '{}' create a task '{}' with id '{}'", username, task.getDescription(), task.getId());
         return task;
     }
 
@@ -59,6 +62,7 @@ public class TaskService {
         Task task = taskRepository.findById(taskId).orElseThrow(() ->
                 new NotFoundException(TASK_NOT_FOUND.formatted(taskId)));
         task.finish(clock);
+        log.info("Task '{}' with id '{}' finished", task.getDescription(), task.getId());
     }
     
     private OffsetDateTime convertStartDate(LocalDate date) {
@@ -90,6 +94,7 @@ public class TaskService {
     @Transactional
     public void clearUserTasks(String username) {
         taskRepository.deleteUserTasks(username);
+        log.info("User '{}' delete all his finished tasks", username);
     }
 
     @Transactional
@@ -97,6 +102,7 @@ public class TaskService {
         taskRepository.findAll().stream()
                 .filter(task -> !task.isFinished())
                 .forEach(task -> task.finish(clock));
+        log.info("All tasks finished");
     }
 
     @Transactional
@@ -105,5 +111,6 @@ public class TaskService {
         taskRepository.findAll().stream()
                 .filter(task -> task.isFinished() && task.getFinishedAt().plus(taskTtl).isBefore(now))
                 .forEach(taskRepository::delete);
+        log.info("Deleted all tasks older than {}", taskTtl);
     }
 }
