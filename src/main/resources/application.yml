@@ -22,3 +22,7 @@ logging:
 app:
     task-ttl: 5d
     time-zone: UTC
+
+springdoc:
+    swagger-ui:
+        path: /swagger-ui

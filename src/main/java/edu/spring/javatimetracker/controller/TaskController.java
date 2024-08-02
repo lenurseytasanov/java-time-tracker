@@ -7,6 +7,9 @@ import edu.spring.javatimetracker.controller.dto.TimeSumDto;
 import edu.spring.javatimetracker.domain.Task;
 import edu.spring.javatimetracker.service.TaskService;
 import edu.spring.javatimetracker.util.validation.Username;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
@@ -25,8 +28,10 @@ public class TaskController {
     private final TaskService taskService;
 
     @PostMapping("/new")
-    public ResponseEntity<TaskCreatedDto> createTask(@Username @PathVariable(name = "username") String username,
-                                                     @NotBlank @RequestBody String description) {
+    @Operation(summary = "Create new task for user")
+    public ResponseEntity<TaskCreatedDto> createTask(
+            @Parameter(description = "Username of user", schema = @Schema(type = "string", example = "username")) @Username @PathVariable(name = "username") String username,
+            @Parameter(description = "Task's content", schema = @Schema(type = "string", example = "Do some job")) @NotBlank @RequestBody String description) {
         Task task = taskService.createTask(username, description);
         return new ResponseEntity<>(new TaskCreatedDto(task.getId()), HttpStatus.CREATED);
     }
